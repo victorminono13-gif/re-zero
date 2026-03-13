@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta de Proteções Divinas - Re:Zero</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
+            color: #fff;
+            font-family: 'Cinzel', serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+            transition: background 1s ease;
+            padding: 40px 0;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(218, 112, 214, 0.15) 0%, transparent 40%);
+            z-index: -1;
+            pointer-events: none;
+            transition: background 1s ease;
+        }
+
+        /* Classe de Aura Dourada Contínua */
+        body.lucky-aura {
+            background: radial-gradient(circle at center, #2e220b 0%, #000000 100%);
+        }
+        body.lucky-aura::before {
+            background: radial-gradient(circle at center, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 900px;
+            width: 90%;
+            background: rgba(10, 5, 20, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid rgba(138, 43, 226, 0.3);
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.5s ease;
+        }
+
+        .container.divine-mode {
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+            background: rgba(25, 20, 5, 0.85);
+        }
+
+        h1 {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 2.5rem;
+            color: #e0d6ff;
+            text-shadow: 0 0 10px #8a2be2, 0 0 20px #8a2be2;
+            margin-bottom: 20px;
+            transition: text-shadow 0.5s, color 0.5s;
+        }
+        
+        .divine-mode h1 {
+            color: #fffacd;
+            text-shadow: 0 0 10px #ffd700, 0 0 20px #ff8c00;
+        }
+
+        /* Controles (Botão de Idioma) */
+        .top-controls {
+            margin-bottom: 30px;
+        }
+        
+        #lang-btn {
+            background: transparent;
+            color: #e0d6ff;
+            border: 1px dashed #8a2be2;
+            padding: 8px 15px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+        }
+        
+        #lang-btn:hover {
+            background: rgba(138, 43, 226, 0.2);
+            border-style: solid;
+        }
+
+        .divine-mode #lang-btn {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        .category-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+
+        .category-btn {
+            background: transparent;
+            color: #ccc;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .category-btn:hover {
+            border-color: #8a2be2;
+            color: #fff;
+        }
+
+        .category-btn.active {
+            background: rgba(138, 43, 226, 0.2);
+            border-color: #da70d6;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(218, 112, 214, 0.6);
+            text-shadow: 0 0 5px #fff;
+        }
+
+        /* Tooltip (Pergaminho Fixo - Interativo) */
+        #tooltip {
+            position: fixed;
+            background: rgba(15, 5, 25, 0.98);
+            border: 2px solid #da70d6;
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            color: #e0d6ff;
+            width: 380px;
+            max-height: 350px;
+            overflow-y: auto;
+            pointer-events: auto;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            font-family: sans-serif;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        #tooltip.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        #tooltip strong { color: #fff; font-family: 'Cinzel', serif; display: block; margin-top: 15px; color: #da70d6; font-size: 1.05rem;}
+        #tooltip p { margin-top: 5px; color: #bbb; line-height: 1.4; border-bottom: 1px dashed rgba(218, 112, 214, 0.3); padding-bottom: 10px;}
+        #tooltip p:last-child { border-bottom: none; }
+
+        .divine-mode #tooltip {
+            border-color: #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+        }
+        .divine-mode #tooltip strong { color: #ffd700; }
+
+        /* Área da Roleta Vertical (Slot) */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px 0;
+            min-height: 150px;
+        }
+
+        .result-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .slot-window {
+            height: 60px;
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(138,43,226,0.1) 50%, rgba(0,0,0,0) 100%);
+            border-radius: 10px;
+        }
+
+        .divine-mode .slot-window {
+            background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(255,215,0,0.15) 50%, rgba(0,0,0,0) 100%);
+        }
+
+        .slot-track {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .slot-item {
+            height: 60px;
+            line-height: 60px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #da70d6;
+            white-space: nowrap;
+        }
+
+        .divine-mode .slot-item { color: #ffd700; }
+
+        .slot-item.winner {
+            animation: glowPulse 2s infinite alternate;
+            color: #da70d6;
+        }
+
+        .divine-mode .slot-item.winner {
+            animation: glowPulseDivine 2s infinite alternate;
+            color: #ffd700;
+        }
+
+        .slot-desc {
+            font-size: 1.1rem;
+            color: #aaa;
+            margin-top: 10px;
+            font-family: sans-serif;
+            opacity: 0;
+            transition: opacity 1s ease;
+            max-width: 600px;
+            height: 0;
+            overflow: hidden;
+        }
+        .slot-desc.show-desc {
+            opacity: 1;
+            height: auto;
+        }
+
+        .spin-btn {
+            background: linear-gradient(45deg, #4b0082, #8a2be2);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: 'Cinzel Decorative', serif;
+            cursor: pointer;
+            border-radius: 50px;
+            box-shadow: 0 0 15px #8a2be2;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 10px;
+        }
+
+        .divine-mode .spin-btn {
+            background: linear-gradient(45deg, #b8860b, #ffd700);
+            box-shadow: 0 0 20px #ffd700;
+            color: #1a0b2e;
+        }
+
+        .spin-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px #da70d6, 0 0 50px #8a2be2;
+        }
+        
+        .divine-mode .spin-btn:hover:not(:disabled) {
+            box-shadow: 0 0 30px #fffacd, 0 0 50px #ffd700;
+        }
+
+        .spin-btn:disabled {
+            background: #333;
+            color: #777;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Clarão Divino (Shift + Click) */
+        .divine-flash {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #fff;
+            box-shadow: inset 0 0 150px #ffd700;
+            z-index: 9999;
+            pointer-events: none;
+            animation: flashAnim 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes flashAnim {
+            0% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+
+        @keyframes glowPulse {
+            0% { text-shadow: 0 0 10px #da70d6, 0 0 20px #8a2be2; }
+            100% { text-shadow: 0 0 20px #fff, 0 0 40px #da70d6, 0 0 60px #8a2be2; }
+        }
+
+        @keyframes glowPulseDivine {
+            0% { text-shadow: 0 0 10px #ffd700, 0 0 20px #ff8c00; }
+            100% { text-shadow: 0 0 20px #fff, 0 0 40px #ffd700, 0 0 60px #ff8c00; }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #8a2be2; border-radius: 4px; }
+        .divine-mode ::-webkit-scrollbar-thumb { background: #ffd700; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+        
+        <div class="top-controls">
+            <button id="lang-btn">🌐 Idioma: Português</button>
+        </div>
+
+        <h1>Od Lagna: Concessão</h1>
+        
+        <div class="category-selector" id="categories">
+            <button class="category-btn active" data-tier="ruins">Bênçãos Ruins</button>
+            <button class="category-btn active" data-tier="boas">Bênçãos Boas</button>
+            <button class="category-btn active" data-tier="otimas">Bênçãos Ótimas</button>
+            <button class="category-btn" data-tier="divinas">Bênçãos Divinas</button>
+        </div>
+
+        <div id="results-container" class="results-container">
+            <div class="result-block">
+                <div class="slot-window">
+                    <div class="slot-item" style="color: #fff;" id="waiting-text">Aguardando Concessão...</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="spin-btn" id="spin-btn">Roletar Bênção</button>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script>
+        // Carregamento dos Áudios
+        const audioSpin = new Audio('freesoundeffects-button-click-289742.mp3');
+        const audioStop = new Audio('skyscraper_seven-click-buttons-ui-menu-sounds-effects-button-7-203601.mp3');
+        const audioGolden = new Audio('alice_soundz-fire-sound-effects-224089.mp3');
+
+        // Função para tocar o "clique" (suporta sobreposição)
+        function playSpinTick() {
+            const tick = audioSpin.cloneNode();
+            tick.volume = 0.5; 
+            tick.play().catch(e => console.log("Áudio bloqueado", e));
+        }
+
+        const blessings = {
+            ruins: [
+                { pt: "Proteção Divina da Roupa", en: "Divine Protection of Clothing", desc: "Permite escolher ou ajustar roupas adequadas para qualquer pessoa ou situação." },
+                { pt: "Proteção Divina da Lavanderia", en: "Divine Protection of Laundry", desc: "Concede grande habilidade para lavar roupas e remover sujeira ou sangue." },
+                { pt: "Proteção Divina da Jardinagem", en: "Divine Protection of Gardening", desc: "Facilita o cultivo de plantas e jardinagem." },
+                { pt: "Proteção Divina da Vegetação", en: "Divine Protection of Vegetation", desc: "A presença do usuário revitaliza plantas próximas." },
+                { pt: "Proteção Divina da Areia", en: "Divine Protection of Sandplay", desc: "Impede afundar na areia e reduz efeitos de terrenos arenosos." },
+                { pt: "Proteção Divina da Moda", en: "Divine Protection of Fashion", desc: "Permite costurar e criar roupas com grande habilidade." },
+                { pt: "Proteção Divina da Fotografia/Pintura", en: "Divine Protection of Photo-Realism", desc: "Capacidade de criar pinturas extremamente realistas." },
+                { pt: "Proteção Divina do Cabeleireiro", en: "Divine Protection of Hairdressing", desc: "Grande habilidade em cortar e arrumar cabelos." },
+                { pt: "Proteção Divina da Fuga de Impostos", en: "Divine Protection of Tax Evasion", desc: "Habilidade de evitar taxas ou cobranças." },
+                { pt: "Proteção Divina da Análise do Sal", en: "Divine Protection of Salt Reasoning", desc: "Permite identificar propriedades ou qualidade do sal." }
+            ],
+            boas: [
+                { pt: "Proteção Divina da Telepatia", en: "Divine Protection of Telepathy", desc: "Permite transmitir pensamentos diretamente para outras pessoas." },
+                { pt: "Proteção Divina da Empatia", en: "Divine Protection of Empathy", desc: "Permite sentir emoções de alguém ao tocá-lo." },
+                { pt: "Proteção Divina da Educação", en: "Divine Protection of Instruction", desc: "Melhora o desempenho de alunos quando o usuário ensina." },
+                { pt: "Proteção Divina do Treinamento", en: "Divine Protection of Training", desc: "Permite entender métodos ideais de treinamento." },
+                { pt: "Proteção Divina da Desintoxicação", en: "Divine Protection of Detoxification", desc: "Resistência contra venenos e substâncias nocivas." },
+                { pt: "Proteção Divina da Panaceia", en: "Divine Protection of Panacea", desc: "Imunidade a doenças." },
+                { pt: "Proteção Divina da Criança do Vento", en: "Divine Protection of Child of Wind", desc: "Impede que o usuário fique doente." },
+                { pt: "Proteção Divina da Linguagem Espiritual", en: "Divine Protection of Soul Language", desc: "Permite comunicação com espíritos." },
+                { pt: "Proteção Divina da Avaliação", en: "Divine Protection of Evaluation", desc: "Permite avaliar pessoas ou objetos." },
+                { pt: "Proteção Divina da Empatia Sensorial", en: "Divine Protection of Insensitivity", desc: "O corpo não pode ser afetado por influências externas." }
+            ],
+            otimas: [
+                { pt: "Proteção Divina da Evasão de Flechas", en: "Divine Protection of Arrow Evasion", desc: "Projéteis não conseguem atingir o usuário." },
+                { pt: "Proteção Divina da Evasão do Vento", en: "Divine Protection of Wind Evasion", desc: "Elimina resistência do vento ao correr." },
+                { pt: "Proteção Divina da Corrida Rápida", en: "Divine Protection of Swift Running", desc: "Aumenta drasticamente a velocidade de movimento." },
+                { pt: "Proteção Divina da Primeira Visão", en: "Divine Protection of First Sight", desc: "Permite reagir instintivamente a ataques desconhecidos." },
+                { pt: "Proteção Divina da Segunda Visão", en: "Divine Protection of Second Coming", desc: "Após ver um ataque uma vez, o usuário reage a ele com extrema eficiência." },
+                { pt: "Proteção Divina da Iniciativa", en: "Divine Protection of Initiative", desc: "O primeiro ataque do usuário sempre acerta e ele não pode ser surpreendido." },
+                { pt: "Proteção Divina do Combate Desarmado", en: "Divine Protection of Unarmed Combat", desc: "Grande habilidade de luta sem armas." },
+                { pt: "Proteção Divina do Deus das Armas", en: "Divine Protection of Weapon God", desc: "Permite dominar qualquer arma." },
+                { pt: "Proteção Divina da Montaria Animal", en: "Divine Protection of Riding Animals", desc: "Permite montar qualquer animal." },
+                { pt: "Proteção Divina da Montaria de Veículos", en: "Divine Protection of Riding Vehicles", desc: "Permite controlar qualquer veículo." },
+                { pt: "Proteção Divina dos Espíritos da Terra", en: "Divine Protection of Earth Spirits", desc: "Permite manipular terra e obter regeneração quando em contato com o solo." },
+                { pt: "Proteção Divina dos Espíritos Reunidos", en: "Divine Protection of Gathering Spirits", desc: "Atrai espíritos e facilita contratos espirituais." },
+                { pt: "Proteção Divina da Água", en: "Divine Protection of Water", desc: "Grande talento para magia de cura." },
+                { pt: "Proteção Divina da Leitura do Vento", en: "Divine Protection of Wind Reading", desc: "Permite ler emoções e perceber mentiras através do vento." },
+                { pt: "Proteção Divina da Trissecção", en: "Divine Protection of Trisection", desc: "Danos recebidos podem ser divididos entre três usuários." },
+                { pt: "Proteção Divina da Visão na Névoa", en: "Divine Protection of Fog", desc: "A visão não é prejudicada pela neblina." },
+                { pt: "Proteção Divina do Lago", en: "Divine Protection of Lakes", desc: "Permite andar sobre a água." },
+                { pt: "Proteção Divina das Nuvens", en: "Divine Protection of Clouds", desc: "Permite caminhar sobre nuvens." },
+                { pt: "Proteção Divina do Raio", en: "Divine Protection of Lightning Cloud", desc: "Impede que raios atinjam o usuário." },
+                { pt: "Proteção Divina do Deslocamento Aéreo", en: "Divine Protection of Air Dashing", desc: "Permite impulsionar-se no ar." },
+                { pt: "Proteção Divina da Rota de Fuga", en: "Divine Protection of Drafts", desc: "Permite localizar rotas de escape." }
+            ],
+            divinas: [
+                { pt: "Proteção Divina da Fênix", en: "Divine Protection of the Phoenix", desc: "Permite reviver automaticamente após morrer uma vez." },
+                { pt: "Proteção Divina da Próxima Fênix", en: "Divine Protection of the Next Phoenix", desc: "Após reviver, a habilidade retorna após um período." },
+                { pt: "Proteção Divina do Santo da Espada", en: "Divine Protection of the Sword Saint", desc: "Concede talento absoluto com espadas e o título de Santo da Espada." },
+                { pt: "Proteção Divina do Deus da Morte", en: "Divine Protection of the Death God", desc: "Ferimentos causados pelo usuário não podem ser curados." },
+                { pt: "Proteção Divina da Resistência à Magia", en: "Divine Protection of Magic Resistance", desc: "Imunidade ou grande resistência a efeitos mágicos negativos." },
+                { pt: "Proteção Divina da Resistência Elemental", en: "Divine Protection of Elemental Resistance", desc: "Redução de 80% do dano e manipulação de elementos." },
+                { pt: "Proteção Divina do Sangramento", en: "Divine Protection of Shedding Blood", desc: "O usuário fica mais forte quanto mais sangue perde." }
+            ]
+        };
+
+        const resultsContainer = document.getElementById('results-container');
+        const spinBtn = document.getElementById('spin-btn');
+        const langBtn = document.getElementById('lang-btn');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const mainContainer = document.getElementById('main-container');
+        const tooltip = document.getElementById('tooltip');
+        const waitingText = document.getElementById('waiting-text');
+
+        let isSpinning = false;
+        let isGolden = false;
+        let isEnglish = false;
+        let currentPool = [];
+        let tooltipTimeout;
+
+        // --- Lógica de Idioma ---
+        langBtn.addEventListener('click', () => {
+            isEnglish = !isEnglish;
+            langBtn.textContent = isEnglish ? '🌐 Idioma: Inglês (Original)' : '🌐 Idioma: Português';
+            
+            if (waitingText && resultsContainer.contains(waitingText)) {
+                waitingText.textContent = isEnglish ? "Awaiting Concession..." : "Aguardando Concessão...";
+            }
+        });
+
+        // --- Lógica do Pergaminho Interativo ---
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('mouseenter', (e) => {
+                clearTimeout(tooltipTimeout);
+                const tier = e.target.getAttribute('data-tier');
+                const list = blessings[tier];
+                
+                let title = isEnglish ? `${tier.charAt(0).toUpperCase() + tier.slice(1)} Blessings` : `Bênçãos ${tier.charAt(0).toUpperCase() + tier.slice(1)}`;
+                let html = `<div style="text-align:center; font-family:'Cinzel Decorative'; font-size:1.3rem; border-bottom:1px solid currentColor; padding-bottom:10px; margin-bottom:10px;">${title}</div>`;
+                
+                list.forEach(item => {
+                    let displayName = isEnglish ? item.en : item.pt;
+                    html += `<strong>✦ ${displayName}</strong><p>${item.desc}</p>`;
+                });
+                
+                tooltip.innerHTML = html;
+                
+                const rect = btn.getBoundingClientRect();
+                let leftPos = rect.left;
+                if (leftPos + 380 > window.innerWidth) {
+                    leftPos = window.innerWidth - 400; 
+                }
+                tooltip.style.left = leftPos + 'px';
+                tooltip.style.top = (rect.bottom + 15) + 'px';
+                
+                tooltip.classList.add('visible');
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                tooltipTimeout = setTimeout(() => {
+                    tooltip.classList.remove('visible');
+                }, 300);
+            });
+
+            btn.addEventListener('click', (e) => {
+                if (isSpinning) return;
+                e.target.classList.toggle('active');
+                
+                const activeBtns = document.querySelectorAll('.category-btn.active');
+                if (activeBtns.length === 0) {
+                    e.target.classList.add('active');
+                }
+            });
+        });
+
+        tooltip.addEventListener('mouseenter', () => { clearTimeout(tooltipTimeout); });
+        tooltip.addEventListener('mouseleave', () => {
+            tooltipTimeout = setTimeout(() => { tooltip.classList.remove('visible'); }, 300);
+        });
+
+        function buildPool() {
+            if (isGolden) return blessings.divinas;
+            
+            let pool = [];
+            document.querySelectorAll('.category-btn.active').forEach(btn => {
+                const tier = btn.getAttribute('data-tier');
+                pool = pool.concat(blessings[tier]);
+            });
+            return pool;
+        }
+
+        // --- Geração da Roleta Vertical ---
+        function executeSpin(event) {
+            if (isSpinning) return;
+            
+            // Lógica do Modo Dourado
+            if (event.shiftKey) {
+                if (!isGolden) {
+                    audioGolden.currentTime = 0;
+                    audioGolden.play().catch(e => console.log(e));
+
+                    const flashDiv = document.createElement('div');
+                    flashDiv.className = 'divine-flash';
+                    document.body.appendChild(flashDiv);
+                    setTimeout(() => flashDiv.remove(), 1600);
+                    
+                    document.body.classList.add('lucky-aura');
+                    mainContainer.classList.add('divine-mode');
+                    isGolden = true;
+                }
+            } else {
+                document.body.classList.remove('lucky-aura');
+                mainContainer.classList.remove('divine-mode');
+                isGolden = false;
+            }
+            
+            isSpinning = true;
+            spinBtn.disabled = true;
+
+            currentPool = buildPool();
+            resultsContainer.innerHTML = '';
+
+            const finalItem = currentPool[Math.floor(Math.random() * currentPool.length)];
+            
+            const block = document.createElement('div');
+            block.className = 'result-block';
+
+            const windowDiv = document.createElement('div');
+            windowDiv.className = 'slot-window';
+
+            const track = document.createElement('div');
+            track.className = 'slot-track';
+
+            // Itens falsos passando rápido
+            const numFakeItems = 40;
+            const itemHeight = 60; // 60px de altura
+            
+            for(let j = 0; j < numFakeItems; j++) {
+                const fakeDiv = document.createElement('div');
+                fakeDiv.className = 'slot-item';
+                let randomTemp = currentPool[Math.floor(Math.random() * currentPool.length)];
+                fakeDiv.textContent = isEnglish ? randomTemp.en : randomTemp.pt;
+                track.appendChild(fakeDiv);
+            }
+
+            // O ganhador
+            const winnerDiv = document.createElement('div');
+            winnerDiv.className = 'slot-item';
+            winnerDiv.textContent = isEnglish ? finalItem.en : finalItem.pt;
+            track.appendChild(winnerDiv);
+
+            windowDiv.appendChild(track);
+            block.appendChild(windowDiv);
+
+            const descDiv = document.createElement('div');
+            descDiv.className = 'slot-desc';
+            descDiv.textContent = finalItem.desc;
+            block.appendChild(descDiv);
+
+            resultsContainer.appendChild(block);
+
+            // Inicia animação
+            setTimeout(() => {
+                const distance = numFakeItems * itemHeight;
+                
+                track.style.transition = 'transform 3s cubic-bezier(0.1, 0.7, 0.1, 1)';
+                track.style.transform = `translateY(-${distance}px)`;
+
+                // Monitoramento do Deslizamento para Sincronizar o Som
+                let lastItemIndex = 0;
+                let rAF_ID;
+                
+                function monitorScroll() {
+                    if (!isSpinning) return;
+                    
+                    // Extrair o valor 'Y' atual da matrix CSS da trilha
+                    const transformStr = window.getComputedStyle(track).getPropertyValue('transform');
+                    if (transformStr && transformStr !== 'none') {
+                        const values = transformStr.split('(')[1].split(')')[0].split(',');
+                        const currentY = Math.abs(parseFloat(values[5]));
+                        const currentIndex = Math.floor(currentY / itemHeight);
+                        
+                        // Se ultrapassou o limiar de um novo item, toca o som
+                        if (currentIndex > lastItemIndex) {
+                            playSpinTick();
+                            lastItemIndex = currentIndex;
+                        }
+                    }
+                    rAF_ID = requestAnimationFrame(monitorScroll);
+                }
+
+                // Começa a acompanhar a roleta a mexer
+                rAF_ID = requestAnimationFrame(monitorScroll);
+
+                setTimeout(() => {
+                    cancelAnimationFrame(rAF_ID); // Para o monitoramento
+                    
+                    audioStop.currentTime = 0;
+                    audioStop.play().catch(e => console.log(e));
+
+                    winnerDiv.classList.add('winner');
+                    descDiv.classList.add('show-desc');
+                    
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                }, 3000); // 3 segundos exatos para sincronizar com o CSS da transição
+            }, 100);
+        }
+
+        spinBtn.addEventListener('click', executeSpin);
+
+    </script>
+</body>
+</html>
