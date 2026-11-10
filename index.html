@@ -386,6 +386,17 @@
         ::-webkit-scrollbar-thumb:hover { background: #da70d6; }
         .divine-mode ::-webkit-scrollbar-thumb { background: #ffd700; }
 
+
+        #debug-panel { display:none; margin-top:24px; padding:20px; text-align:left; background:#100820; border:1px solid #9933ff; border-radius:12px; }
+        #debug-panel.open { display:block; }
+        #debug-panel h2 { color:#d9b8ff; margin-bottom:12px; }
+        #debug-panel .debug-row { display:grid; grid-template-columns:160px 1fr; gap:10px; margin:10px 0; }
+        #debug-panel input, #debug-panel textarea, #debug-panel select { width:100%; padding:9px; color:#fff; background:#241536; border:1px solid #75509a; border-radius:6px; }
+        #debug-panel textarea { min-height:70px; resize:vertical; }
+        #debug-panel button { padding:9px 14px; margin:5px 5px 5px 0; cursor:pointer; border-radius:6px; border:1px solid #9933ff; color:#fff; background:#38165a; }
+        #debug-status { color:#9cffb0; font-family:sans-serif; margin:8px 0; }
+        @media(max-width:600px){ #debug-panel .debug-row { grid-template-columns:1fr; } }
+
     </style>
 </head>
 <body>
@@ -407,6 +418,20 @@
         <div class="action-buttons">
             <button class="spin-btn" id="spin-btn">Roletar Bênção</button>
         </div>
+
+        <section id="debug-panel" aria-label="Editor de bênçãos">
+            <h2>Debug — Editor de Bênçãos</h2>
+            <p style="font-family:sans-serif;margin-bottom:12px">Edite uma bênção e suas alterações serão salvas automaticamente neste navegador. Use “Exportar HTML” para gerar um arquivo HTML com as alterações incorporadas.</p>
+            <div class="debug-row"><label for="debug-tier">Categoria</label><select id="debug-tier"></select></div>
+            <div class="debug-row"><label for="debug-item">Bênção</label><select id="debug-item"></select></div>
+            <div class="debug-row"><label for="debug-name">Nome</label><input id="debug-name" type="text"></div>
+            <div class="debug-row"><label for="debug-desc">Descrição</label><textarea id="debug-desc"></textarea></div>
+            <button type="button" id="debug-new">Nova bênção</button>
+            <button type="button" id="debug-delete">Excluir bênção</button>
+            <button type="button" id="debug-export">Exportar HTML atualizado</button>
+            <button type="button" id="debug-close">Fechar Debug</button>
+            <div id="debug-status" role="status">Pronto.</div>
+        </section>
     </div>
 
     <div id="tooltip" class="" style="left: 1030.91px; top: 328px;"><div class="tooltip-header">Autoridades</div><strong>✦ Authority of Sloth (Preguiça)</strong><p>A Autoridade da Preguiça: Invoca as 'Mãos Ocultas' (Unseen Hands), braços sombrios invisíveis de força destrutiva massiva e alcance brutal.</p><strong>✦ Authority of Greed (Ganância)</strong><p>A Autoridade da Ganância: Isola o tempo do próprio corpo do fluxo do mundo, garantindo invencibilidade física absoluta, ou a parada do coração dos inimigos.</p><strong>✦ Authority of Wrath (Ira)</strong><p>A Autoridade da Ira: Interliga as almas, compartilhando emoções extremas, dor física e até mesmo o estado de morte simultaneamente entre todos em sua área.</p><strong>✦ Authority of Lust (Luxúria)</strong><p>A Autoridade da Luxúria: A manipulação perturbadora da forma, transformando as leis da biologia de si mesmo e dos alvos à vontade com a respiração e o toque.</p><strong>✦ Authority of Melancholy (Melancolia)</strong><p>A Autoridade da Melancolia: O poder de quebrar a sanidade do mundo material através de uma pressão gravitacional insuperável, esmagando tudo em pó.</p></div>
@@ -415,10 +440,12 @@
         const audioSpin = new Audio('freesoundeffects-button-click-289742.mp3');
         const audioStop = new Audio('skyscraper_seven-click-buttons-ui-menu-sounds-effects-button-7-203601.mp3');
         const audioGolden = new Audio('alice_soundz-fire-sound-effects-224089.mp3');
+        // Volume geral do site reduzido em 40% (60% do volume original).
+        [audioSpin, audioStop, audioGolden].forEach(audio => audio.volume = 0.6);
 
         function playSpinTick() {
             const tick = audioSpin.cloneNode();
-            tick.volume = 0.6; 
+            tick.volume = 0.6; // volume reduzido em 40% 
             tick.play().catch(e => console.log("Áudio bloqueado", e));
         }
 
@@ -604,7 +631,12 @@
         });
 
         function buildNormalPool() {
-            if (isGolden) return [{ itemObj: database.autoridades.items[Math.floor(Math.random() * database.autoridades.items.length)], colorClass: database.autoridades.colorClass }];
+            if (isGolden) {
+                const luckyTiers = ['excelente', 'autoridades'];
+                return luckyTiers.flatMap(tier => database[tier].items.map(item => ({
+                    itemObj: item, colorClass: database[tier].colorClass
+                })));
+            }
             
             let pool = [];
             document.querySelectorAll('.category-btn.active').forEach(btn => {
@@ -730,6 +762,112 @@
 
             }, 100);
         }
+
+
+        // Debug: Ctrl+Shift+D ou comando "debug" digitado no site.
+        const debugPanel = document.getElementById('debug-panel');
+        const debugTier = document.getElementById('debug-tier');
+        const debugItem = document.getElementById('debug-item');
+        const debugName = document.getElementById('debug-name');
+        const debugDesc = document.getElementById('debug-desc');
+        const debugStatus = document.getElementById('debug-status');
+        let debugCommandBuffer = '';
+        let debugNewItem = false;
+        const savedDatabase = localStorage.getItem('od-laguna-database');
+        if (savedDatabase) {
+            try {
+                const parsed = JSON.parse(savedDatabase);
+                Object.keys(parsed).forEach(tier => { if (database[tier] && Array.isArray(parsed[tier].items)) database[tier].items = parsed[tier].items; });
+            } catch (err) { console.warn('Não foi possível carregar o salvamento local.', err); }
+        }
+        Object.keys(database).forEach(tier => {
+            const option = document.createElement('option');
+            option.value = tier; option.textContent = database[tier].name;
+            debugTier.appendChild(option);
+        });
+        function refreshDebugItems(selectIndex = 0) {
+            debugItem.innerHTML = '';
+            database[debugTier.value].items.forEach((item, index) => {
+                const option = document.createElement('option');
+                option.value = index; option.textContent = item.name;
+                debugItem.appendChild(option);
+            });
+            if (database[debugTier.value].items.length) {
+                debugItem.selectedIndex = Math.min(selectIndex, database[debugTier.value].items.length - 1);
+                loadDebugItem();
+            } else {
+                debugName.value = ''; debugDesc.value = ''; debugNewItem = true;
+            }
+        }
+        function loadDebugItem() {
+            const item = database[debugTier.value].items[Number(debugItem.value)];
+            if (!item) return;
+            debugNewItem = false; debugName.value = item.name; debugDesc.value = item.desc;
+        }
+        function saveDebugItem() {
+            const tier = debugTier.value;
+            if (!debugName.value.trim()) { debugStatus.textContent = 'Digite um nome para a bênção.'; return; }
+            const item = { name: debugName.value.trim(), desc: debugDesc.value.trim() };
+            if (debugNewItem) {
+                database[tier].items.push(item); debugNewItem = false;
+                refreshDebugItems(database[tier].items.length - 1);
+            } else {
+                database[tier].items[Number(debugItem.value)] = item;
+                const option = debugItem.options[debugItem.selectedIndex];
+                if (option) option.textContent = item.name;
+            }
+            localStorage.setItem('od-laguna-database', JSON.stringify(database));
+            debugStatus.textContent = 'Salvo automaticamente neste navegador.';
+        }
+        function openDebug() {
+            debugPanel.classList.add('open');
+            debugTier.value = debugTier.value || 'excelente';
+            refreshDebugItems();
+        }
+        document.addEventListener('keydown', event => {
+            if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'd') {
+                event.preventDefault(); openDebug(); return;
+            }
+            if (event.ctrlKey || event.altKey || event.metaKey) return;
+            if (event.key.length === 1) {
+                debugCommandBuffer = (debugCommandBuffer + event.key.toLowerCase()).slice(-5);
+                if (debugCommandBuffer === 'debug') openDebug();
+            }
+        });
+        debugTier.addEventListener('change', () => refreshDebugItems());
+        debugItem.addEventListener('change', loadDebugItem);
+        debugName.addEventListener('input', saveDebugItem);
+        debugDesc.addEventListener('input', saveDebugItem);
+        document.getElementById('debug-new').addEventListener('click', () => {
+            debugNewItem = true; debugItem.selectedIndex = -1; debugName.value = ''; debugDesc.value = '';
+            debugName.focus(); debugStatus.textContent = 'Nova bênção: preencha os campos; o salvamento ocorre ao digitar.';
+        });
+        document.getElementById('debug-delete').addEventListener('click', () => {
+            if (debugNewItem || debugItem.value === '') return;
+            database[debugTier.value].items.splice(Number(debugItem.value), 1);
+            localStorage.setItem('od-laguna-database', JSON.stringify(database));
+            refreshDebugItems(); debugStatus.textContent = 'Bênção excluída e alterações salvas neste navegador.';
+        });
+        document.getElementById('debug-close').addEventListener('click', () => debugPanel.classList.remove('open'));
+        document.getElementById('debug-export').addEventListener('click', () => {
+            const copy = document.documentElement.cloneNode(true);
+            const oldScript = copy.querySelector('script');
+            const dataScript = document.createElement('script');
+            dataScript.textContent = '/* Banco editado incorporado pelo Debug */\nconst __savedBlessings = ' + JSON.stringify(database) + ';\n';
+            // Embed database override at the start of the original script, preserving app logic.
+            const scripts = copy.querySelectorAll('script');
+            if (scripts.length) {
+                scripts[0].textContent = 'const __exportedBlessings = ' + JSON.stringify(database) + ';\n' + scripts[0].textContent.replace('const database = {', 'const database = {');
+                // Replace database declaration with the exported data literal.
+                scripts[0].textContent = scripts[0].textContent.replace(/const database = \{[\s\S]*?\n        \};/, 'const database = __exportedBlessings;');
+            }
+            const blob = new Blob(['<!DOCTYPE html>\n' + copy.outerHTML], {type:'text/html;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'od-laguna-atualizado.html'; a.click();
+            URL.revokeObjectURL(url);
+            debugStatus.textContent = 'HTML atualizado exportado.';
+        });
+
 
         spinBtn.addEventListener('click', executeSpin);
 
